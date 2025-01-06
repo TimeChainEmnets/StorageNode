@@ -1,27 +1,26 @@
 package main
 
 import (
-	"github.com/TimeChainEmnets/StorageNode/internel/config"
-	"github.com/TimeChainEmnets/StorageNode/internel/blockchain"
-
+	"fmt"
+	"math/big"
+	"github.com/TimeChainEmnets/StorageNode/internal/config"
+	"github.com/TimeChainEmnets/StorageNode/internal/blockchain"
 )
 
 func main() {
-	cfg := &config.Config{
-		BlockchainConfig: &config.BlockchainConfig{
-				NodeURL:         "https://sepolia.infura.io/v3/YOUR-PROJECT-ID",
-				ContractAddress: "YOUR-CONTRACT-ADDRESS",
-				PrivateKey:      "YOUR-PRIVATE-KEY",
-				GasLimit:        3000000,
-		},
+	cfg, err := config.Load("config.json")
+	if err != nil {
+		panic(err)
 	}
-	
 	client := blockchain.NewClient(cfg)
 	
 	// 注册节点
-	err := client.RegisterNode(context.Background(), 
-		"192.168.1.1", 
-		39.9042, 
-		116.4074, 
+	result, err := client.RegisterNode("192.168.1.1", 
+		big.NewInt(39), 
+		big.NewInt(116), 
 		big.NewInt(1000000))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
 }
