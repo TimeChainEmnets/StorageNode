@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"config"
-	"blockchain"
+	"github.com/TimeChainEmnets/StorageNode/internel/config"
+	"github.com/TimeChainEmnets/StorageNode/internel/blockchain"
 
 )
 

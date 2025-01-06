@@ -1,13 +1,11 @@
 package blockchain
 
 import (
-	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"log"
-	"math/big"
 	"strings"
-	//"storage-node/internal/config"
+
+	"github.com/TimeChainEmnets/StorageNode/internel/config"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
