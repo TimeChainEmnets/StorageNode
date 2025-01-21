@@ -4,13 +4,14 @@ import (
     "context"
     "fmt"
     "os"
+    "io"
 
     "github.com/ipfs/go-ipfs-config"
-    "github.com/ipfs/go-ipfs-files"
-    icore "github.com/ipfs/interface-go-ipfs-core"
-    icorepath "github.com/ipfs/interface-go-ipfs-core/path"
+    files "github.com/ipfs/go-ipfs-files"
+    "github.com/ipfs/boxo/path"
+    gcid "github.com/ipfs/go-cid"
     "github.com/ipfs/kubo/core"
-    "github.com/ipfs/boxo/coreiface/impl"
+    "github.com/ipfs/kubo/core/coreapi"
     "github.com/ipfs/kubo/core/node/libp2p"
     "github.com/ipfs/kubo/plugin/loader"
     "github.com/ipfs/kubo/repo/fsrepo"
@@ -20,7 +21,7 @@ import (
 type IPFSClient struct {
     ctx    context.Context
     cancel context.CancelFunc
-    api    icore.CoreAPI
+    api    coreapi.CoreAPI
     node   *core.IpfsNode
 }
 
@@ -39,7 +40,7 @@ func InitIPFS(repoPath string) (*IPFSClient, error) {
 
 		// 初始化插件系统
 		plugins, err := loader.NewPluginLoader("")
-		if err != nil {
+		if (err != nil) {
 				return nil, fmt.Errorf("初始化插件失败: %s", err)
 		}
 		if err := plugins.Initialize(); err != nil {
@@ -74,7 +75,7 @@ func InitIPFS(repoPath string) (*IPFSClient, error) {
 		client.node = node
 
         // 创建API实例
-        api, err := impl.NewCoreAPI(node)
+        api, err := coreapi.NewCoreAPI(node)
         if err != nil {
                 return nil, fmt.Errorf("创建API失败: %s", err)
         }
@@ -109,10 +110,16 @@ func (c *IPFSClient) SaveFile(filePath string) (string, error) {
 // outputPath: 文件保存路径
 // 返回: 错误信息
 func (c *IPFSClient) GetFile(cid string, outputPath string) error {
-    path := icorepath.New(cid)
+    // 使用IpfsPath创建正确的IPFS路径
+    decodedCid, err := gcid.Decode(cid)
+    if err != nil {
+        return fmt.Errorf("无效的CID: %v", err)
+    }
+
+    ipfsPath := path.FromCid(decodedCid)
 
     // 获取文件
-    node, err := c.api.Unixfs().Get(c.ctx, path)
+    node, err := c.api.Unixfs().Get(c.ctx, ipfsPath)
     if err != nil {
         return fmt.Errorf("从IPFS获取文件失败: %s", err)
     }
@@ -125,8 +132,8 @@ func (c *IPFSClient) GetFile(cid string, outputPath string) error {
     defer file.Close()
 
     // 写入文件
-    if err := files.WriteTo(node, file); err != nil {
-        return fmt.Errorf("写入文件失败: %s", err)
+    if _, err := io.Copy(out, file); err != nil {
+        return fmt.Errorf("写入文件失败: %v", err)
     }
 
     return nil
